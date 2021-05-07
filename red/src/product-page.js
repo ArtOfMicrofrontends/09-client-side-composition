@@ -40,33 +40,48 @@ function renderOptions(sku) {
   return product.variants
     .map(
       (variant) => `
-<button class="${
-        sku === variant.sku ? "active" : ""
-      }" type="button" data-sku="${variant.sku}">
-  <img src="${variant.thumb}" alt="${variant.name}" />
-</button>
-`
+        <button class="${
+          sku === variant.sku ? "active" : ""
+        }" type="button" data-sku="${variant.sku}">
+          <img src="${variant.thumb}" alt="${variant.name}" />
+        </button>
+      `
     )
     .join("");
+}
+
+function getCurrent(sku) {
+  return product.variants.filter((v) => v.sku === sku)[0] || product.variants[0];
+}
+
+function renderImage(current) {
+  return `
+    <div>
+      <img src="${current.image}" alt="${current.name}" />
+    </div>
+  `;
+}
+
+function renderName(current) {
+  return `
+    ${product.name} <small>${current.name}</small>
+  `;
 }
 
 class ProductPage extends HTMLElement {
   constructor() {
     super();
     const sku = this.getAttribute("sku") || "porsche";
-    const current =
-      product.variants.filter((v) => v.sku === sku)[0] || product.variants[0];
+    const current = getCurrent(sku);
 
     this.innerHTML = `
 <h1 id="store">The Model Store</h1>
 <basket-info sku="${sku}" class="blue-basket" id="basket"></basket-info>
 <div id="image">
-  <div>
-    <img src="${current.image}" alt="${current.name}" />
-  </div>
+  ${renderImage(current)}
 </div>
 <h2 id="name">
-  ${product.name} <small>${current.name}</small>
+  ${renderName(current)}
 </h2>
 <div id="options">
   ${renderOptions(current.sku)}
@@ -89,9 +104,12 @@ class ProductPage extends HTMLElement {
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (name === "sku" && oldValue !== newValue) {
+      const current = getCurrent(newValue);
       this.querySelector("#basket").setAttribute("sku", newValue);
       this.querySelector("#buy").setAttribute("sku", newValue);
       this.querySelector("#reco").setAttribute("sku", newValue);
+      this.querySelector('#name').innerHTML = renderName(current);
+      this.querySelector('#image').innerHTML = renderImage(current);
       this.querySelectorAll("#options button").forEach((button) => {
         if (button.dataset.sku === newValue) {
           button.classList.add("active");
